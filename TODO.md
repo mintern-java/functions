@@ -1,5 +1,5 @@
-- ~~Add `package-info.java` files.~~
-- Update Javadocs to include appropriate `@param` items.
-- Add `unchecked` instance methods to checked functions?
-- Clean up templates (refactoring, commenting, etc.)
-- Finish Sonatype setup and first deploy to Maven
+- ~~2014/11/06: Add `package-info.java` files.~~ 2014/11/07
+- 2014/11/06: Update Javadocs to include appropriate `@param` items.
+- 2014/11/06: Add `unchecked` instance methods to checked functions?
+- 2014/11/06: Finish Sonatype setup and first deploy to Maven
+- 2014/11/07: Clean up templates (refactoring, commenting, etc.)
