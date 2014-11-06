@@ -1,7 +1,12 @@
 dataRoot: .
+freemarkerLinks: {
+    imp: .
+}
 data: {
-    javaFunctions: csv(JavaFunctions.scsv)
-    javaTypes: csv(JavaTypes.scsv)
-    package: net.mintern.functions
-    module: "${project.artifactId}"
+    JAVA_FUNCTIONS: csv(JavaFunctions.scsv)
+    JAVA_TYPES: csv(JavaTypes.scsv)
+    PACKAGE_BASE: net.mintern.functions
+    PARAMETERS: [T, U, V]
+    ARGC_NAMES: [nullary, unary, binary, ternary]
+    ARTIFACT_ID: "${project.artifactId}"
 }

@@ -1,0 +1,10 @@
+<@pp.dropOutputFile />
+<#import "/@imp/Base.ftl" as base>
+<#list [false, true] as checked>
+<@pp.nestOutputFile name = base.filename("package-info", checked)>
+/**
+ * Provides {@code @FunctionalInterface}s for ${base.module.argc}-argument operations ${checked?string("that throw checked exceptions", "")}.
+ */
+package ${base.package(checked)};
+</@pp.nestOutputFile>
+</#list>

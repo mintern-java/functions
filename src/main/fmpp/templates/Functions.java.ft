@@ -1,24 +1,14 @@
 <@pp.dropOutputFile />
-
-<#assign PARAMETERS = ["T", "U", "V"]>
-<#assign COUNT_NAMES = ["nullary", "unary", "binary", "ternary"]>
+<#import "/@imp/Base.ftl" as base>
 
 <#assign jfs = {}>
-<#list javaFunctions as j>
+<#list JAVA_FUNCTIONS as j>
     <#assign jfs = jfs + { j.className: {
+        "className": j.javaClass,
         "class": (j.javaClass = "Runnable")?string("Runnable", "java.util.function." + j.javaClass),
         "method": j.javaMethod
     }}>
 </#list>
-
-<#assign moduleParts = module?split("-")[1..]>
-<#assign module = {
-    "name": moduleParts[0],
-    "argc": COUNT_NAMES?seq_index_of(moduleParts[0]),
-    "group": moduleParts[1]!
-}>
-
-<#assign packageName = package + "." + module.name>
 
 <#function min x y>
     <#if x lt y>
@@ -91,10 +81,10 @@
 </#function>
 
 <#function belongsInModule args ret>
-    <#if args?size != module.argc>
+    <#if args?size != base.module.argc>
         <#return false>
     </#if>
-    <#switch module.group>
+    <#switch base.module.group>
         <#case "core">
             <#return inCoreGroup(args, ret)>
         <#case "all">
@@ -155,18 +145,18 @@
 </#function>
 
 <#function toInstantiatedType args ret checked>
-    <#return package + "." + COUNT_NAMES[args?size] + checked?string(".checked", "") + "."
+    <#return PACKAGE_BASE + "." + ARGC_NAMES[args?size] + checked?string(".checked", "") + "."
              + toClassName(args, ret, checked)
              + toParams(genericInfo(args, ret).vars + ifElse(checked, ["E"], []))>
 </#function>
 
-<#list javaTypes as a1>
-    <#list javaTypes[min(a1_index, 1)..] as a2>
-        <#list javaTypes[min(a2_index, 1)..] as a3>
+<#list JAVA_TYPES as a1>
+    <#list JAVA_TYPES[min(a1_index, 1)..] as a2>
+        <#list JAVA_TYPES[min(a2_index, 1)..] as a3>
             <#assign args = addArg(addArg(addArg([], a1), a2), a3)>
             <#assign argSignature = toSignature(args)>
             <#assign argList = toArgList(args)>
-            <#list javaTypes as r>
+            <#list JAVA_TYPES as r>
                 <#if belongsInModule(args, r)>
                     <#assign ret = r + { "type": isObj(r)?string("R", r.type) }
                              uncheckedClassName = toClassName(args, ret)
@@ -180,8 +170,8 @@
                                  classWParams = className + classParams
                                  jf = jfs[className]!{}>
 
-<@pp.nestOutputFile name = module.name + "/" + checked?string("checked/", "") + className + ".java">
-package ${packageName}${checked?string(".checked", "")};
+<@pp.nestOutputFile name = base.filename(className, checked)>
+package ${base.package(checked)};
 
 <#assign returnDocs = (ret.type = "void")?string("operates via side effects (returning no value)",
                                                  "returns a value of type {@code ${ret.type}}")>
@@ -215,7 +205,7 @@ package ${packageName}${checked?string(".checked", "")};
         <#assign extends = []>
     </#if>
 <#else>
-    <#assign extends = ["${packageName}.checked.${checkedClassName}" + toParams(generics.vars + ["RuntimeException"])]>
+    <#assign extends = ["${base.package(true)}.${checkedClassName}" + toParams(generics.vars + ["RuntimeException"])]>
     <#if jf.class??>
         <#assign extends = extends + [jf.class + classParams]>
     </#if>
@@ -238,7 +228,7 @@ public interface ${classWParams} ${extends}{
     ${ret.type} call(${argSignature}) throws E;
 <#else>
     <#assign uncheckedRetType = "${checkedParams} ${classWParams}">
-    <#assign checkedArgType = packageName + ".checked." + checkedClassName + toParams(generics.vars + ["E"])>
+    <#assign checkedArgType = "${base.package(true)}.${checkedClassName}" + toParams(generics.vars + ["E"])>
 
     /**
      * Returns an unchecked version of {@code f} that uses {@code toRuntime} to convert any checked
@@ -337,7 +327,7 @@ public interface ${classWParams} ${extends}{
 <#if jf.method??>
 
     /**
-     * Allows {@code this} to act as a {@code ${jf.class + classParams}}.
+     * Allows {@code this} to act as a {@code ${jf.className + classParams}}.
      */
     @Override
     default ${ret.type} ${jf.method}(${argSignature}) {
