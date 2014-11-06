@@ -1,6 +1,17 @@
-# Functions
+## Functions
 
-## Every Java `@FunctionalInterface` you want!
+- [Every Java `@FunctionalInterface` you want!](#every-java-functionalinterface-you-want)
+- [Checked interfaces](#checked-interfaces)
+- [Static methods](#static-methods)
+- [But `Stream.map` takes a `Function`!](#but-streammap-takes-a-function)
+- [`bind`](#bind)
+- [Sensible packaging](#sensible-packaging)
+- [Contributing](#contributing)
+    - [Building](#building)
+    - [Where are all the source files?](#where-are-all-the-source-files)
+- [What's next?](#whats-next)
+
+### Every Java `@FunctionalInterface` you want!
 
 This project provides `@FunctionalInterface`s for every possible function of 0
 to 3 arguments. It enumerates all combinations of parameters and return values
@@ -26,7 +37,7 @@ generation but remains readable. For example:
 - `DblFloatByteToChar`: `char call(double d, float fl, byte b)`
 - `ObjObjObjToObj<T, U, V, R>`: `R call(T t, U u, V v)`
 
-## Checked interfaces
+### Checked interfaces
 
 As with Java 8's `java.util.function` package, none of the above methods throw
 exceptions. Especially in the case of `IOException` this can lead to lambdas
@@ -62,7 +73,7 @@ withReader(path, reader -> {
 This works! In other words, there's no need to catch and wrap the exception when
 you use these checked interfaces in obvious places.
 
-## Static methods
+### Static methods
 
 It gets better than that! Even when a method expects an unchecked functional
 interface, you can still avoid the exception handling boilerplate:
@@ -83,7 +94,7 @@ A more general `unchecked(Function<? super E, RuntimeException> wrap, f)` is
 also provided that allows you to wrap your exception however you wish, or you
 can use `unchecked(f)` to simply wrap it in a `RuntimeException`.
 
-## But `Stream.map` takes a `Function`!
+### But `Stream.map` takes a `Function`!
 
 I'm glad you noticed that! Any place that a `net.mintern.functions` interface
 has the same signature as a Java interface, my interface extends the Java one,
@@ -96,7 +107,7 @@ meaning that you can just plug it right in! For example:
 
 and so on.
 
-## `bind`
+### `bind`
 
 In case that's not enough, every non-nullary function provides both `static`
 and instance `bind` and `rbind` methods. If you are tired of this pattern:
@@ -113,7 +124,7 @@ hexStrings.mapToInt(ObjIntToInt.rbind(Integer::valueOf, 16))
 
 It's not a huge win in this case, but perhaps you'll find places where it is!
 
-## Sensible packaging
+### Sensible packaging
 
 As you might imagine, providing all of these type combinations results in an
 explosion in the number of classes. In order to avoid pulling in *so* many
@@ -139,16 +150,16 @@ functions that you are unlikely to use, I've split them up as follows:
 
 Only pull in what you need!
 
-# Contributing
+### Contributing
 
 I will happily accept Pull Requests. I'll flesh out this section as people ask
 me questions.
 
-## Building
+#### Building
 
 In the root directory, run `mvn install`. That will build everything.
 
-## Where are all the source files?
+#### Where are all the source files?
 
 For this project, I used an ancient-but-solid (by modern standards) template
 language called [FreeMarker](http://freemarker.org) to provide a template that
@@ -165,7 +176,7 @@ configuration](https://github.com/mintern-java/functions/tree/master/src/main/fm
 but most of the logic for generating everything is in a single template file:
 [Functions.java.ft](https://github.com/mintern-java/functions/tree/master/src/main/fmpp).
 
-## What's next?
+### What's next?
 
 I'll be using this function library to build out modern `Pair` and `Triple`
 libraries, `Either` types, `Collection` and `Stream` (and `BiStream` and
