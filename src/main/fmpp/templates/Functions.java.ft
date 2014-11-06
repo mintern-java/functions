@@ -17,13 +17,6 @@
     <#return y>
 </#function>
 
-<#function ifElse test then otherwise>
-    <#if test>
-        <#return then>
-    </#if>
-    <#return otherwise>
-</#function>
-
 <#function pluck key hashSeq>
     <#local vals = []>
     <#list hashSeq as hash>
@@ -137,7 +130,10 @@
     <#return pluck("name", args)?join("", "Nil") + "To" + ret.name + throws?string("E", "")>
 </#function>
 
-<#function toParams tvars>
+<#function toParams tvars evar="">
+    <#if evar != "">
+        <#local tvars = tvars + [evar]>
+    </#if>
     <#if tvars?size gt 0>
         <#return "<" + tvars?join(", ") + ">">
     </#if>
@@ -147,7 +143,7 @@
 <#function toInstantiatedType args ret checked>
     <#return PACKAGE_BASE + "." + ARGC_NAMES[args?size] + checked?string(".checked", "") + "."
              + toClassName(args, ret, checked)
-             + toParams(genericInfo(args, ret).vars + ifElse(checked, ["E"], []))>
+             + toParams(genericInfo(args, ret).vars, checked?string("E", ""))>
 </#function>
 
 <#list JAVA_TYPES as a1>
@@ -163,7 +159,7 @@
                              checkedClassName = uncheckedClassName + "E"
                              generics = genericInfo(args, ret)
                              uncheckedParams = toParams(generics.vars)
-                             checkedParams = toParams(generics.vars + ["E extends Exception"])>
+                             checkedParams = toParams(generics.vars, "E extends Exception")>
                     <#list [true, false] as checked>
                         <#assign className = checked?string(checkedClassName, uncheckedClassName)
                                  classParams = checked?string(checkedParams, uncheckedParams)
@@ -205,7 +201,7 @@ package ${base.package(checked)};
         <#assign extends = []>
     </#if>
 <#else>
-    <#assign extends = ["${base.package(true)}.${checkedClassName}" + toParams(generics.vars + ["RuntimeException"])]>
+    <#assign extends = ["${base.package(true)}.${checkedClassName}" + toParams(generics.vars, "RuntimeException")]>
     <#if jf.class??>
         <#assign extends = extends + [jf.class + classParams]>
     </#if>
@@ -228,7 +224,7 @@ public interface ${classWParams} ${extends}{
     ${ret.type} call(${argSignature}) throws E;
 <#else>
     <#assign uncheckedRetType = "${checkedParams} ${classWParams}">
-    <#assign checkedArgType = "${base.package(true)}.${checkedClassName}" + toParams(generics.vars + ["E"])>
+    <#assign checkedArgType = "${base.package(true)}.${checkedClassName}" + toParams(generics.vars, "E")>
 
     /**
      * Returns an unchecked version of {@code f} that uses {@code toRuntime} to convert any checked
@@ -262,7 +258,7 @@ public interface ${classWParams} ${extends}{
      * Returns an unchecked version of {@code f} that wraps any {@code IOException} with an
      * {@link java.io.UncheckedIOException}.
      */
-    static ${toParams(generics.vars + ["E extends java.io.IOException"])} ${classWParams} uncheckedIO(
+    static ${toParams(generics.vars, "E extends java.io.IOException")} ${classWParams} uncheckedIO(
             ${checkedArgType} f) {
         return unchecked(java.io.UncheckedIOException::new, f);
     }
@@ -272,7 +268,7 @@ public interface ${classWParams} ${extends}{
     <#assign leftArgs = leftArgs + [a]>
     <#assign rightArgs = args[a_index+1..]>
     <#assign bindType = toInstantiatedType(rightArgs, ret, checked)>
-    <#assign staticClassType = className + toParams(generics.vars + ifElse(checked, ["E"], []))>
+    <#assign staticClassType = className + toParams(generics.vars, checked?string("E", ""))>
     <#assign bindSignature = toSignature(leftArgs)>
     <#assign rbindSignature = toSignature(rightArgs)>
     <#assign leftArgList = toArgList(leftArgs)>
