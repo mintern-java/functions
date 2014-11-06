@@ -339,6 +339,7 @@ public interface ${classWParams} ${extends}{
      *
     <@javadoc types=paramList/>
      * @param f the unbound function
+    <@javadoc args=rightArgs start=leftArgs?size+1 forTheArg=args/>
     <@bindReturnDocs params=bindSignature returns=ret f="f" args=argList/>
      */
     static ${classParams} ${rbindType}

@@ -1,7 +1,6 @@
-- ~~2014/11/06: Add `package-info.java` files.~~ 2014/11/07
-- ~~2014/11/06: Update Javadocs to include appropriate `@param` items.~~
-  2014/11/07
-- 2014/11/06: Add `unchecked` instance methods to checked functions?
+- ~~2014/11/06: Add `package-info.java` files.~~ (2014/11/07)
+- ~~2014/11/06: Update Javadocs to include appropriate `@param` items.~~ (2014/11/07)
+- *2014/11/06: Add `unchecked` instance methods to checked functions?* - Not for now (2014/11/07)
 - 2014/11/06: Finish Sonatype setup and first deploy to Maven
 - 2014/11/07: Clean up templates (refactoring, commenting, etc.)
-- 2014/11/07: Bring module `pom.xml` files up to Sonatype standards.
+- ~~2014/11/07: Bring module `pom.xml` files up to Sonatype standards.~~ 2014/11/07

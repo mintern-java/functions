@@ -15,6 +15,35 @@
     <name>Ternary Functions - All</name>
     <description>Provides functional interfaces for all two-argument functions</description>
 
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Brandon Mintern</name>
+            <email>brandon@mintern.net</email>
+            <organization>Mintern Java Projects</organization>
+            <organizationUrl>https://github.com/mintern-java</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:mintern-java/functions.git</connection>
+        <developerConnection>scm:git:git@github.com:mintern-java/functions.git</developerConnection>
+        <url>git@github.com:mintern-java/functions.git</url>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <dependencies>
         <dependency>
             <groupId>net.mintern</groupId>
