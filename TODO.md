@@ -1,0 +1,4 @@
+- Add `package-info.java` files.
+- Update Javadocs to include appropriate `@param` items.
+- Add `unchecked` instance methods to checked functions?
+- Finish Sonatype setup and first deploy to Maven
