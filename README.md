@@ -80,10 +80,10 @@ interface, you can still avoid the exception handling boilerplate:
 
 ```java
 Stream<Path> paths = ...;
-String[] allLines = paths
+String[] firstLines = paths
         .map(ObjToObj.uncheckedIO(path -> Files.newBufferedReader(path, utf8)))
-        .map(ObjToObj.uncheckedIO(BufferedReader::getLine))
-        .flatMap().toArray(String[]::new);
+        .map(ObjToObj.uncheckedIO(BufferedReader::readLine))
+        .toArray(String[]::new);
 ```
 
 Both `newBufferedReader` and `getLine` can throw exceptions, but the
