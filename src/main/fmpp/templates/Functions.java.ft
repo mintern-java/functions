@@ -30,19 +30,7 @@
         <#return args>
     </#if>
     <#if isObj(arg)>
-        <#list PARAMETERS as param>
-            <#local available = true>
-            <#list args as a>
-                <#if a.type = param>
-                    <#local available = false>
-                    <#break>
-                </#if>
-            </#list>
-            <#if available>
-                <#local argType = param>
-                <#break>
-            </#if>
-        </#list>
+        <#local argType = PARAMETERS[args?size]>
         <#local argVar = argType?lower_case>
     <#else>
         <#local argType = arg.type>
@@ -73,6 +61,10 @@
     <#return pluck("var", args)?join(", ")>
 </#function>
 
+<#function ofType args ret>
+    <#return "of type {@code (" + pluck("type", args)?join(", ") + ") -> ${ret.type}}">
+</#function>
+
 <#function belongsInModule args ret>
     <#if args?size != base.module.argc>
         <#return false>
@@ -83,7 +75,7 @@
         <#case "all">
             <#return inAllGroup(args, ret)>
         <#case "extended">
-            <#return ! inCoreGroup(args, ret) && ! inAllGroup(args, ret)>
+            <#return !inCoreGroup(args, ret) && !inAllGroup(args, ret)>
         <#default>
             <#return true>
     </#switch>
@@ -111,31 +103,44 @@
     <#return t.name = "Obj">
 </#function>
 
-<#function genericInfo args ret>
-    <#local vars=[] descs=[]>
+<#function describeTypeParam p params>
+    <#if p = "R">
+        <#return "the type of the return value">
+    <#elseif p?starts_with("E")>
+        <#return "the {@code Exception} type that the operation may throw">
+    <#else>
+        <#return "the type of " + argN(PARAMETERS?seq_index_of(p) + 1, params)>
+    </#if>
+</#function>
+
+<#function argN n args>
+    <#return (args?size gt 1)?string("argument " + n, "the argument")>
+
+</#function>
+
+<#function getGenericVars args ret>
+    <#local vars=[]>
     <#list args as a>
         <#if isObj(a)>
-            <#local vars = vars + [a.type]
-                    descs = descs + [a.type + " the type of argument " + (a_index + 1)]>
+            <#local vars = vars + [a.type]>
         </#if>
     </#list>
     <#if isObj(ret)>
-        <#local vars = vars + [ret.type]
-                descs = descs + [ret.type + " the type of the return value"]>
+        <#local vars = vars + [ret.type]>
     </#if>
-    <#return { "vars": vars, "descs": descs }>
+    <#return vars>
 </#function>
 
 <#function toClassName args ret throws=false>
     <#return pluck("name", args)?join("", "Nil") + "To" + ret.name + throws?string("E", "")>
 </#function>
 
-<#function toParams tvars evar="">
-    <#if evar != "">
-        <#local tvars = tvars + [evar]>
+<#function toParams typeVars extraTypeVar="">
+    <#if extraTypeVar != "">
+        <#local typeVars = typeVars + [extraTypeVar]>
     </#if>
-    <#if tvars?size gt 0>
-        <#return "<" + tvars?join(", ") + ">">
+    <#if typeVars?size gt 0>
+        <#return "<" + typeVars?join(", ") + ">">
     </#if>
     <#return "">
 </#function>
@@ -143,8 +148,25 @@
 <#function toInstantiatedType args ret checked>
     <#return PACKAGE_BASE + "." + ARGC_NAMES[args?size] + checked?string(".checked", "") + "."
              + toClassName(args, ret, checked)
-             + toParams(genericInfo(args, ret).vars, checked?string("E", ""))>
+             + toParams(getGenericVars(args, ret), checked?string("E", ""))>
 </#function>
+
+<#macro javadoc types=[] args=[] start=1 returns={"type": "void"} indent="     " forTheArg=args>
+    <#list types as t>
+${indent}* @param <${t[0]}> ${describeTypeParam(t, types)}
+    </#list>
+    <#list args as a>
+${indent}* @param ${a.var} ${argN(a_index + start, forTheArg)}
+    </#list>
+    <#if returns.type != "void">
+${indent}* @return the result of the operation
+    </#if>
+</#macro>
+
+<#macro bindReturnDocs params returns f args>
+     * @return a new function {@code (${params}) -> ${returns.type}} that calls
+     *      {@code ${f}.call(${args})}<#if returns.type != "void"> and returns the result</#if>.
+</#macro>
 
 <#list JAVA_TYPES as a1>
     <#list JAVA_TYPES[min(a1_index, 1)..] as a2>
@@ -157,66 +179,52 @@
                     <#assign ret = r + { "type": isObj(r)?string("R", r.type) }
                              uncheckedClassName = toClassName(args, ret)
                              checkedClassName = uncheckedClassName + "E"
-                             generics = genericInfo(args, ret)
-                             uncheckedParams = toParams(generics.vars)
-                             checkedParams = toParams(generics.vars, "E extends Exception")>
+                             genericVars = getGenericVars(args, ret)
+                             uncheckedParams = toParams(genericVars)
+                             checkedParamList = genericVars + ["E extends Exception"]
+                             checkedParams = toParams(checkedParamList)>
                     <#list [true, false] as checked>
                         <#assign className = checked?string(checkedClassName, uncheckedClassName)
                                  classParams = checked?string(checkedParams, uncheckedParams)
                                  classWParams = className + classParams
                                  jf = jfs[className]!{}>
-
+                        <#if checked>
+                            <#assign paramList = checkedParamList>
+                            <#if checkedClassName = "NilToObjE">
+                                <#assign extends = ["java.util.concurrent.Callable<R>"]>
+                            <#else>
+                                <#assign extends = []>
+                            </#if>
+                        <#else>
+                            <#assign paramList = genericVars>
+                            <#assign extends = ["${base.package(true)}.${checkedClassName}"
+                                                + toParams(genericVars, "RuntimeException")]>
+                            <#if jf.class??>
+                                <#assign extends = extends + [jf.class + classParams]>
+                            </#if>
+                        </#if>
+                        <#if extends?size gt 0>
+                            <#assign extends = "extends\n        " + extends?join(",\n        ") + " ">
+                        <#else>
+                            <#assign extends = "">
+                        </#if>
 <@pp.nestOutputFile name = base.filename(className, checked)>
 package ${base.package(checked)};
 
-<#assign returnDocs = (ret.type = "void")?string("operates via side effects (returning no value)",
-                                                 "returns a value of type {@code ${ret.type}}")>
 /**
-<#if args?size = 0>
- * An operation that accepts no arguments and ${returnDocs}.
-<#elseif args?size = 1>
- * An operation that accepts an argument of type {@code ${args[0].type}} and
- * ${returnDocs}.
-<#elseif args?size = 2>
- * An operation that accepts two arguments of type {@code ${args[0].type}}<#if args[0].type != args[1].type> and {@code ${args[1].type}},</#if>
- * and ${returnDocs}.
-<#else>
- * An operation that accepts ({@code ${pluck("type", args)?join("}, {@code ")}}) arguments and
- * ${returnDocs}.
-</#if>
-<#if generics.vars?size gt 0 || checked>
+ * An operation ${ofType(args, ret)}.
  *
-<#list generics.descs as desc>
- * @param ${desc}
-</#list>
-<#if checked>
- * @param E the {@code Exception} type that may be thrown by the operation
-</#if>
-</#if>
+<@javadoc types=paramList indent=" "/>
  */
-<#if checked>
-    <#if checkedClassName = "NilToObjE">
-        <#assign extends = ["java.util.concurrent.Callable<R>"]>
-    <#else>
-        <#assign extends = []>
-    </#if>
-<#else>
-    <#assign extends = ["${base.package(true)}.${checkedClassName}" + toParams(generics.vars, "RuntimeException")]>
-    <#if jf.class??>
-        <#assign extends = extends + [jf.class + classParams]>
-    </#if>
-</#if>
-<#if extends?size gt 0>
-    <#assign extends = "extends\n        " + extends?join(",\n        ") + " ">
-<#else>
-    <#assign extends = "">
-</#if>
 @FunctionalInterface
 public interface ${classWParams} ${extends}{
 <#if checked>
 
     /**
-     * Calls this function<#if ret.type != "void">, returning its result</#if>.
+     * Performs this operation.
+     *
+    <@javadoc args=args returns=ret/>
+     * @throws E if the operation cannot be completed
      */
     <#if checkedClassName = "NilToObjE">
     @Override
@@ -224,11 +232,19 @@ public interface ${classWParams} ${extends}{
     ${ret.type} call(${argSignature}) throws E;
 <#else>
     <#assign uncheckedRetType = "${checkedParams} ${classWParams}">
-    <#assign checkedArgType = "${base.package(true)}.${checkedClassName}" + toParams(generics.vars, "E")>
+    <#assign fullCheckedClass = "${base.package(true)}.${checkedClassName}">
+    <#assign checkedArgType = fullCheckedClass + toParams(genericVars, "E")>
 
     /**
-     * Returns an unchecked version of {@code f} that uses {@code toRuntime} to convert any checked
+     * Returns a wrapped version of {@code f} that uses {@code toRuntime} to convert any checked
      * {@code Exception} to a {@code RuntimeException}.
+     *
+    <@javadoc types=checkedParamList/>
+     * @param toRuntime if a checked exception is thrown from
+     *      {@link ${fullCheckedClass}#call}, then this function
+     *      is called in in order to convert it to a {@code RuntimeException}
+     * @param f the operation to wrap
+     * @return a wrapped version of {@code f} that does not throw checked exceptions
      */
     @SuppressWarnings("unchecked")
     static ${uncheckedRetType} unchecked(
@@ -246,8 +262,12 @@ public interface ${classWParams} ${extends}{
     }
 
     /**
-     * Returns an unchecked version of {@code f} that wraps any checked {@code Exception} with a
+     * Returns a wrapped version of {@code f} that wraps any checked {@code Exception} with a
      * {@code RuntimeException}.
+     *
+    <@javadoc types=checkedParamList/>
+     * @param f the operation to wrap
+     * @return a wrapped version of {@code f} that does not throw checked exceptions
      */
     static ${uncheckedRetType} unchecked(
             ${checkedArgType} f) {
@@ -255,10 +275,15 @@ public interface ${classWParams} ${extends}{
     }
 
     /**
-     * Returns an unchecked version of {@code f} that wraps any {@code IOException} with an
+     * Returns a wrapped version of {@code f} that wraps any {@code IOException} with an
      * {@link java.io.UncheckedIOException}.
+     *
+    <@javadoc types=checkedParamList/>
+     * @param f the operation to wrap
+     * @return a wrapped version of {@code f} that throws {@code UncheckedIOException} instead of
+     *      {@code IOException}
      */
-    static ${toParams(generics.vars, "E extends java.io.IOException")} ${classWParams} uncheckedIO(
+    static ${toParams(genericVars, "E extends java.io.IOException")} ${classWParams} uncheckedIO(
             ${checkedArgType} f) {
         return unchecked(java.io.UncheckedIOException::new, f);
     }
@@ -268,15 +293,21 @@ public interface ${classWParams} ${extends}{
     <#assign leftArgs = leftArgs + [a]>
     <#assign rightArgs = args[a_index+1..]>
     <#assign bindType = toInstantiatedType(rightArgs, ret, checked)>
-    <#assign staticClassType = className + toParams(generics.vars, checked?string("E", ""))>
+    <#assign staticClassType = className + toParams(genericVars, checked?string("E", ""))>
     <#assign bindSignature = toSignature(leftArgs)>
     <#assign rbindSignature = toSignature(rightArgs)>
     <#assign leftArgList = toArgList(leftArgs)>
     <#assign rightArgList = toArgList(rightArgs)>
+    <#assign theBeginningOf = (rightArgs?size gt 0)?string("the beginning of ", "")>
 
     /**
-     * Binds {@code (${leftArgList})} to the beginning of {@code f}, returning a new function that
-     * accepts {@code (${rbindSignature})}.
+     * Binds {@code (${leftArgList})} to ${theBeginningOf}{@code f}, returning a new function
+     * ${ofType(rightArgs, ret)}.
+     *
+    <@javadoc types=paramList/>
+     * @param f the unbound function
+    <@javadoc args=leftArgs forTheArg=args/>
+    <@bindReturnDocs params=rbindSignature returns=ret f="f" args=argList/>
      */
     <#if checked && rightArgs?size = 0 && isObj(ret)>
     @SuppressWarnings("unchecked") // maven spuriously warns about a type error in this case
@@ -287,10 +318,13 @@ public interface ${classWParams} ${extends}{
     }
 
     /**
-     * Binds {@code (${leftArgList})} to the beginning of {@code this}, returning a new function
-     * that accepts {@code (${rbindSignature})}.
+     * Binds {@code (${leftArgList})} to ${theBeginningOf}{@code this}, returning a new function
+     * ${ofType(rightArgs, ret)}.
+     *
+    <@javadoc args=leftArgs forTheArg=args/>
+    <@bindReturnDocs params=rbindSignature returns=ret f="this" args=argList/>
      */
-    <#if ! checked>
+    <#if !checked>
     @Override
     </#if>
     default ${bindType} bind(${bindSignature}) {
@@ -300,8 +334,12 @@ public interface ${classWParams} ${extends}{
     <#assign rbindType = toInstantiatedType(leftArgs, ret, checked)>
 
     /**
-     * Binds {@code (${rightArgList})} to the end of {@code f}, returning a new function that
-     * accepts {@code (${bindSignature})}.
+     * Binds {@code (${rightArgList})} to the end of {@code f}, returning a new function
+     * ${ofType(leftArgs, ret)}.
+     *
+    <@javadoc types=paramList/>
+     * @param f the unbound function
+    <@bindReturnDocs params=bindSignature returns=ret f="f" args=argList/>
      */
     static ${classParams} ${rbindType}
     rbind(${staticClassType} f, ${rbindSignature}) {
@@ -309,10 +347,13 @@ public interface ${classWParams} ${extends}{
     }
 
     /**
-     * Binds {@code (${rightArgList})} to the end of {@code this}, returning a new function that
-     * accepts {@code (${bindSignature})}.
+     * Binds {@code (${rightArgList})} to the end of {@code this}, returning a new function
+     * ${ofType(leftArgs, ret)}.
+     *
+    <@javadoc args=rightArgs start=leftArgs?size+1 forTheArg=args/>
+    <@bindReturnDocs params=bindSignature returns=ret f="this" args=argList/>
      */
-    <#if ! checked>
+    <#if !checked>
     @Override
     </#if>
     default ${rbindType} rbind(${rbindSignature}) {
@@ -324,6 +365,8 @@ public interface ${classWParams} ${extends}{
 
     /**
      * Allows {@code this} to act as a {@code ${jf.className + classParams}}.
+     *
+    <@javadoc args=args returns=ret/>
      */
     @Override
     default ${ret.type} ${jf.method}(${argSignature}) {
