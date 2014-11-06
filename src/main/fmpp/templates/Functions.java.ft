@@ -1,0 +1,349 @@
+<@pp.dropOutputFile />
+
+<#assign PARAMETERS = ["T", "U", "V"]>
+<#assign COUNT_NAMES = ["nullary", "unary", "binary", "ternary"]>
+
+<#assign jfs = {}>
+<#list javaFunctions as j>
+    <#assign jfs = jfs + { j.className: {
+        "class": (j.javaClass = "Runnable")?string("Runnable", "java.util.function." + j.javaClass),
+        "method": j.javaMethod
+    }}>
+</#list>
+
+<#assign moduleParts = module?split("-")[1..]>
+<#assign module = {
+    "name": moduleParts[0],
+    "argc": COUNT_NAMES?seq_index_of(moduleParts[0]),
+    "group": moduleParts[1]!
+}>
+
+<#assign packageName = package + "." + module.name>
+
+<#function min x y>
+    <#if x lt y>
+        <#return x>
+    </#if>
+    <#return y>
+</#function>
+
+<#function ifElse test then otherwise>
+    <#if test>
+        <#return then>
+    </#if>
+    <#return otherwise>
+</#function>
+
+<#function pluck key hashSeq>
+    <#local vals = []>
+    <#list hashSeq as hash>
+        <#local vals = vals + [hash[key]]>
+    </#list>
+    <#return vals>
+</#function>
+
+<#function addArg args arg>
+    <#if arg.type = "void">
+        <#return args>
+    </#if>
+    <#if isObj(arg)>
+        <#list PARAMETERS as param>
+            <#local available = true>
+            <#list args as a>
+                <#if a.type = param>
+                    <#local available = false>
+                    <#break>
+                </#if>
+            </#list>
+            <#if available>
+                <#local argType = param>
+                <#break>
+            </#if>
+        </#list>
+        <#local argVar = argType?lower_case>
+    <#else>
+        <#local argType = arg.type>
+        <#local argVar = arg.var>
+    </#if>
+    <#assign newArgs = []>
+    <#list args as a>
+        <#if a.origVar = argVar>
+            <#local aVar = a.origVar + (a_index + 1)>
+            <#local argVar = argVar + (args?size + 1)>
+        <#else>
+            <#local aVar = a.var>
+        </#if>
+        <#assign newArgs = newArgs + [a + { "var": aVar }]>
+    </#list>
+    <#return newArgs + [arg + { "type": argType, "var": argVar, "origVar": arg.var }]>
+</#function>
+
+<#function toSignature args>
+    <#assign sig = []>
+    <#list args as a>
+        <#assign sig = sig + [a.type + " " + a.var]>
+    </#list>
+    <#return sig?join(", ")>
+</#function>
+
+<#function toArgList args>
+    <#return pluck("var", args)?join(", ")>
+</#function>
+
+<#function belongsInModule args ret>
+    <#if args?size != module.argc>
+        <#return false>
+    </#if>
+    <#switch module.group>
+        <#case "core">
+            <#return inCoreGroup(args, ret)>
+        <#case "all">
+            <#return inAllGroup(args, ret)>
+        <#case "extended">
+            <#return ! inCoreGroup(args, ret) && ! inAllGroup(args, ret)>
+        <#default>
+            <#return true>
+    </#switch>
+</#function>
+
+<#function inCoreGroup args ret>
+    <#list args as a>
+        <#if a.group != "core">
+            <#return false>
+        </#if>
+    </#list>
+    <#return ret.group = "core" || ret.group = "return-core">
+</#function>
+
+<#function inAllGroup args ret>
+    <#list args as a>
+        <#if a.group = "all">
+            <#return true>
+        </#if>
+    </#list>
+    <#return ret.group = "all">
+</#function>
+
+<#function isObj t>
+    <#return t.name = "Obj">
+</#function>
+
+<#function genericInfo args ret>
+    <#local vars=[] descs=[]>
+    <#list args as a>
+        <#if isObj(a)>
+            <#local vars = vars + [a.type]
+                    descs = descs + [a.type + " the type of argument " + (a_index + 1)]>
+        </#if>
+    </#list>
+    <#if isObj(ret)>
+        <#local vars = vars + [ret.type]
+                descs = descs + [ret.type + " the type of the return value"]>
+    </#if>
+    <#return { "vars": vars, "descs": descs }>
+</#function>
+
+<#function toClassName args ret throws=false>
+    <#return pluck("name", args)?join("", "Nil") + "To" + ret.name + throws?string("E", "")>
+</#function>
+
+<#function toParams tvars>
+    <#if tvars?size gt 0>
+        <#return "<" + tvars?join(", ") + ">">
+    </#if>
+    <#return "">
+</#function>
+
+<#function toInstantiatedType args ret checked>
+    <#return package + "." + COUNT_NAMES[args?size] + checked?string(".checked", "") + "."
+             + toClassName(args, ret, checked)
+             + toParams(genericInfo(args, ret).vars + ifElse(checked, ["E"], []))>
+</#function>
+
+<#list javaTypes as a1>
+    <#list javaTypes[min(a1_index, 1)..] as a2>
+        <#list javaTypes[min(a2_index, 1)..] as a3>
+            <#assign args = addArg(addArg(addArg([], a1), a2), a3)>
+            <#assign argSignature = toSignature(args)>
+            <#assign argList = toArgList(args)>
+            <#list javaTypes as r>
+                <#if belongsInModule(args, r)>
+                    <#assign ret = r + { "type": isObj(r)?string("R", r.type) }
+                             uncheckedClassName = toClassName(args, ret)
+                             checkedClassName = uncheckedClassName + "E"
+                             generics = genericInfo(args, ret)
+                             uncheckedParams = toParams(generics.vars)
+                             checkedParams = toParams(generics.vars + ["E extends Exception"])>
+                    <#list [true, false] as checked>
+                        <#assign className = checked?string(checkedClassName, uncheckedClassName)
+                                 classParams = checked?string(checkedParams, uncheckedParams)
+                                 classWParams = className + classParams
+                                 jf = jfs[className]!{}>
+
+<@pp.nestOutputFile name = module.name + "/" + checked?string("checked/", "") + className + ".java">
+package ${packageName}${checked?string(".checked", "")};
+
+<#assign returnDocs = (ret.type = "void")?string("operates via side effects (returning no value)",
+                                                 "returns a value of type {@code ${ret.type}}")>
+/**
+<#if args?size = 0>
+ * An operation that accepts no arguments and ${returnDocs}.
+<#elseif args?size = 1>
+ * An operation that accepts an argument of type {@code ${args[0].type}} and
+ * ${returnDocs}.
+<#elseif args?size = 2>
+ * An operation that accepts two arguments of type {@code ${args[0].type}}<#if args[0].type != args[1].type> and {@code ${args[1].type}},</#if>
+ * and ${returnDocs}.
+<#else>
+ * An operation that accepts ({@code ${pluck("type", args)?join("}, {@code ")}}) arguments and
+ * ${returnDocs}.
+</#if>
+<#if generics.vars?size gt 0 || checked>
+ *
+<#list generics.descs as desc>
+ * @param ${desc}
+</#list>
+<#if checked>
+ * @param E the {@code Exception} type that may be thrown by the operation
+</#if>
+</#if>
+ */
+<#if checked>
+    <#if checkedClassName = "NilToObjE">
+        <#assign extends = ["java.util.concurrent.Callable<R>"]>
+    <#else>
+        <#assign extends = []>
+    </#if>
+<#else>
+    <#assign extends = ["${packageName}.checked.${checkedClassName}" + toParams(generics.vars + ["RuntimeException"])]>
+    <#if jf.class??>
+        <#assign extends = extends + [jf.class + classParams]>
+    </#if>
+</#if>
+<#if extends?size gt 0>
+    <#assign extends = "extends\n        " + extends?join(",\n        ") + " ">
+<#else>
+    <#assign extends = "">
+</#if>
+@FunctionalInterface
+public interface ${classWParams} ${extends}{
+<#if checked>
+
+    /**
+     * Calls this function<#if ret.type != "void">, returning its result</#if>.
+     */
+    <#if checkedClassName = "NilToObjE">
+    @Override
+    </#if>
+    ${ret.type} call(${argSignature}) throws E;
+<#else>
+    <#assign uncheckedRetType = "${checkedParams} ${classWParams}">
+    <#assign checkedArgType = packageName + ".checked." + checkedClassName + toParams(generics.vars + ["E"])>
+
+    /**
+     * Returns an unchecked version of {@code f} that uses {@code toRuntime} to convert any checked
+     * {@code Exception} to a {@code RuntimeException}.
+     */
+    @SuppressWarnings("unchecked")
+    static ${uncheckedRetType} unchecked(
+            java.util.function.Function<? super E, RuntimeException> toRuntime,
+            ${checkedArgType} f) {
+        return (${argList}) -> {
+            try {
+                <#if ret.type != "void">return </#if>f.call(${argList});
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw toRuntime.apply((E) e);
+            }
+        };
+    }
+
+    /**
+     * Returns an unchecked version of {@code f} that wraps any checked {@code Exception} with a
+     * {@code RuntimeException}.
+     */
+    static ${uncheckedRetType} unchecked(
+            ${checkedArgType} f) {
+        return unchecked(RuntimeException::new, f);
+    }
+
+    /**
+     * Returns an unchecked version of {@code f} that wraps any {@code IOException} with an
+     * {@link java.io.UncheckedIOException}.
+     */
+    static ${toParams(generics.vars + ["E extends java.io.IOException"])} ${classWParams} uncheckedIO(
+            ${checkedArgType} f) {
+        return unchecked(java.io.UncheckedIOException::new, f);
+    }
+</#if>
+<#assign leftArgs = []>
+<#list args as a>
+    <#assign leftArgs = leftArgs + [a]>
+    <#assign rightArgs = args[a_index+1..]>
+    <#assign bindType = toInstantiatedType(rightArgs, ret, checked)>
+    <#assign staticClassType = className + toParams(generics.vars + ifElse(checked, ["E"], []))>
+    <#assign bindSignature = toSignature(leftArgs)>
+    <#assign rbindSignature = toSignature(rightArgs)>
+    <#assign leftArgList = toArgList(leftArgs)>
+    <#assign rightArgList = toArgList(rightArgs)>
+
+    /**
+     * Binds {@code (${leftArgList})} to the beginning of {@code f}, returning a new function that
+     * accepts {@code (${rbindSignature})}.
+     */
+    <#if checked && rightArgs?size = 0 && isObj(ret)>
+    @SuppressWarnings("unchecked") // maven spuriously warns about a type error in this case
+    </#if>
+    static ${classParams} ${bindType}
+    bind(${staticClassType} f, ${bindSignature}) {
+        return (${rightArgList}) -> f.call(${argList});
+    }
+
+    /**
+     * Binds {@code (${leftArgList})} to the beginning of {@code this}, returning a new function
+     * that accepts {@code (${rbindSignature})}.
+     */
+    <#if ! checked>
+    @Override
+    </#if>
+    default ${bindType} bind(${bindSignature}) {
+        return ${className}.bind(this, ${leftArgList});
+    }
+    <#if rightArgs?size gt 0>
+    <#assign rbindType = toInstantiatedType(leftArgs, ret, checked)>
+
+    /**
+     * Binds {@code (${rightArgList})} to the end of {@code f}, returning a new function that
+     * accepts {@code (${bindSignature})}.
+     */
+    static ${classParams} ${rbindType}
+    rbind(${staticClassType} f, ${rbindSignature}) {
+        return (${leftArgList}) -> f.call(${argList});
+    }
+
+    /**
+     * Binds {@code (${rightArgList})} to the end of {@code this}, returning a new function that
+     * accepts {@code (${bindSignature})}.
+     */
+    <#if ! checked>
+    @Override
+    </#if>
+    default ${rbindType} rbind(${rbindSignature}) {
+        return ${className}.rbind(this, ${rightArgList});
+    }
+    </#if>
+</#list>
+<#if jf.method??>
+
+    /**
+     * Allows {@code this} to act as a {@code ${jf.class + classParams}}.
+     */
+    @Override
+    default ${ret.type} ${jf.method}(${argSignature}) {
+        <#if ret.type != "void">return </#if>call(${argList});
+    }
+</#if>
+}
+</@pp.nestOutputFile>
+</#list></#if></#list></#list></#list></#list>

@@ -1,0 +1,7 @@
+dataRoot: .
+data: {
+    javaFunctions: csv(JavaFunctions.scsv)
+    javaTypes: csv(JavaTypes.scsv)
+    package: net.mintern.functions
+    module: "${project.artifactId}"
+}

@@ -1,0 +1,11 @@
+type;name;group;var
+void;Nil;core
+boolean;Bool;return-core;bool
+byte;Byte;extended;b
+char;Char;extended;ch
+short;Short;all;sh
+int;Int;core;i
+long;Long;core;l
+float;Float;extended;fl
+double;Dbl;core;d
+Object;Obj;core;o
