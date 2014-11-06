@@ -134,9 +134,9 @@ functions that you are unlikely to use, I've split them up as follows:
 - **nullary** (*20 classes*): checked and unchecked functions to produce every
   type (a la Java's `Supplier`s)
 - **unary-core** (*48 classes*): 1-argument functions that accept `int`,
-  `long`, `double`, or `Object`, returning `boolean`, `int`, `long`, `double`,
-  or `Object`. The unchecked unary-core functions correspond to Java's
-  `Function` and `Predicate` types.
+  `long`, `double`, or `Object`, returning `void`, `boolean`, `int`, `long`,
+  `double`, or `Object`. The unchecked unary-core functions correspond to
+  Java's `Function` and `Predicate` types.
 - **unary-extended** (*96 classes*): unary-core, but with `boolean`, `byte`,
   `char`, and `float` arguments and return values
 - **unary-all** (*36 classes*): all of unary-extended, plus `short` types
