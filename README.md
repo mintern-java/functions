@@ -11,7 +11,8 @@
     - [Where are all the source files?](#where-are-all-the-source-files)
 - [What's next?](#whats-next)
 
-To include this library in your project, add the following to your POM:
+To include the full library in your project (not recommended!), add the
+following to your POM:
 ```xml
 <project>
 ...
@@ -28,8 +29,8 @@ To include this library in your project, add the following to your POM:
 </project>
 ```
 
-You almost certainly do not want or need all of the packages, so replace
-`ternary-all` with [the one you want](#sensible-packaging).
+You almost certainly do not want or need all of the 16,000+ (!) classes, so
+replace `ternary-all` with [the subset you need](#sensible-packaging).
 
 ### Every Java `@FunctionalInterface` you want!
 
