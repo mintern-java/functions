@@ -1,5 +1,25 @@
 ## Functions
 
+To include this library in your project, add the following to your POM:
+```xml
+<project>
+...
+    <dependencies>
+        ...
+        <dependency>
+            <groupId>net.mintern</groupId>
+            <artifactId>functions-ternary-all</artifactId>
+            <version>1.0</version>
+        </dependency>
+        ...
+    </dependencies>
+...
+</project>
+```
+
+You almost certainly do not want or need all of the packages, so replace
+`ternary-all` with [the one you want](#sensible-packaging).
+
 - [Every Java `@FunctionalInterface` you want!](#every-java-functionalinterface-you-want)
 - [Checked interfaces](#checked-interfaces)
 - [Static methods](#static-methods)
@@ -151,6 +171,12 @@ functions that you are unlikely to use, I've split them up as follows:
 - **ternary-all** (*5364 classes*)
 
 Only pull in what you need!
+
+Note that every `extended` package pulls in its corresponding `core` package,
+in addition to the other `extended` packages that take fewer arguments.
+Likewise, `all` pulls in `extended`. This means that a dependency on
+`binary-extended` will also pull in `binary-core`, `unary-extended`,
+`unary-core`, and `nullary`.
 
 ### Contributing
 
