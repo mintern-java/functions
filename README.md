@@ -1,4 +1,15 @@
-## Functions
+## Java Functions
+
+- [Every Java `@FunctionalInterface` you want!](#every-java-functionalinterface-you-want)
+- [Checked interfaces](#checked-interfaces)
+- [Static methods](#static-methods)
+- [But `Stream.map` takes a `Function`!](#but-streammap-takes-a-function)
+- [`bind`](#bind)
+- [Sensible packaging](#sensible-packaging)
+- [Contributing](#contributing)
+    - [Building](#building)
+    - [Where are all the source files?](#where-are-all-the-source-files)
+- [What's next?](#whats-next)
 
 To include this library in your project, add the following to your POM:
 ```xml
@@ -19,17 +30,6 @@ To include this library in your project, add the following to your POM:
 
 You almost certainly do not want or need all of the packages, so replace
 `ternary-all` with [the one you want](#sensible-packaging).
-
-- [Every Java `@FunctionalInterface` you want!](#every-java-functionalinterface-you-want)
-- [Checked interfaces](#checked-interfaces)
-- [Static methods](#static-methods)
-- [But `Stream.map` takes a `Function`!](#but-streammap-takes-a-function)
-- [`bind`](#bind)
-- [Sensible packaging](#sensible-packaging)
-- [Contributing](#contributing)
-    - [Building](#building)
-    - [Where are all the source files?](#where-are-all-the-source-files)
-- [What's next?](#whats-next)
 
 ### Every Java `@FunctionalInterface` you want!
 
