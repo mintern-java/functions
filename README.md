@@ -202,7 +202,7 @@ Some data definitions are in semicolon-delimited (`scsv`!) files in the
 [FreeMarker
 configuration](https://github.com/mintern-java/functions/tree/master/src/main/fmpp),
 but most of the logic for generating everything is in a single template file:
-[Functions.java.ft](https://github.com/mintern-java/functions/tree/master/src/main/fmpp/templates/Functions.java.ft).
+[Functions.java.ft](https://github.com/mintern-java/functions/blob/master/src/main/fmpp/templates/net/mintern/functions/Functions.java.ft).
 
 ### What's next?
 
