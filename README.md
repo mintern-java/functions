@@ -21,7 +21,7 @@ following to your POM:
         <dependency>
             <groupId>net.mintern</groupId>
             <artifactId>functions-ternary-all</artifactId>
-            <version>1.0</version>
+            <version>1.0.1</version>
         </dependency>
         ...
     </dependencies>

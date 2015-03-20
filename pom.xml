@@ -6,7 +6,7 @@
 
     <groupId>net.mintern</groupId>
     <artifactId>functions</artifactId>
-    <version>1.0</version>
+    <version>1.0.1</version>
     <packaging>pom</packaging>
     <name>Functions</name>
     <description>Builds all functions</description>
@@ -97,7 +97,6 @@
                     <artifactId>fmpp-maven-plugin</artifactId>
                     <version>1.0</version>
                     <configuration>
-                        <outputDirectory>target/generated-sources/net/mintern/functions</outputDirectory>
                         <cfgFile>target/fmpp/Functions.fmpp</cfgFile>
                         <templateDirectory>target/fmpp/templates</templateDirectory>
                     </configuration>
@@ -140,25 +139,8 @@
                         <skipTests>true</skipTests>
                     </configuration>
                 </plugin>
-                <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>1.6.5</version>
-                    <extensions>true</extensions>
-                    <configuration>
-                        <serverId>ossrh</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>false</autoReleaseAfterClose>
-                    </configuration>
-                </plugin>
             </plugins>
         </pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
     </build>
 
     <profiles>
@@ -208,6 +190,17 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.5</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
