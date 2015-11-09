@@ -21,7 +21,7 @@ following to your POM:
         <dependency>
             <groupId>net.mintern</groupId>
             <artifactId>functions-ternary-all</artifactId>
-            <version>1.0.1</version>
+            <version>2.0</version>
         </dependency>
         ...
     </dependencies>
@@ -123,11 +123,11 @@ same signature as a Java interface extends the Java one, meaning that you can
 just plug it right in! For example:
 
 - `NilToNil extends Runnable`
-- `NilToObjE<V> extends Callable<V>`
 - `ObjIntToNil<T> extends ObjIntConsumer<T>`
 - `ObjObjToObj<T, U, R> extends BiFunction<T, U, R>`
 
-and so on.
+and so on. There is one exception: as of 2.0, `NilToObjE<V>` doesn't extends
+`Callable<V>`, as this breaks lambda type inference. See #2.
 
 ### `bind`
 

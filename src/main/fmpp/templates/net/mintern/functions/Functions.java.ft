@@ -190,11 +190,7 @@ ${indent}* @return the result of the operation
                                  jf = jfs[className]!{}>
                         <#if checked>
                             <#assign paramList = checkedParamList>
-                            <#if checkedClassName = "NilToObjE">
-                                <#assign extends = ["java.util.concurrent.Callable<R>"]>
-                            <#else>
-                                <#assign extends = []>
-                            </#if>
+                            <#assign extends = []>
                         <#else>
                             <#assign paramList = genericVars>
                             <#assign extends = ["${base.package(true)}.${checkedClassName}"
@@ -226,9 +222,6 @@ public interface ${classWParams} ${extends}{
     <@javadoc args=args returns=ret/>
      * @throws E if the operation cannot be completed
      */
-    <#if checkedClassName = "NilToObjE">
-    @Override
-    </#if>
     ${ret.type} call(${argSignature}) throws E;
 <#else>
     <#assign uncheckedRetType = "${checkedParams} ${classWParams}">
