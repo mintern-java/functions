@@ -1,5 +1,8 @@
 ## Java Functions
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/net.mintern/functions-ternary-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/net.mintern/functions-ternary-core)
+[![Javadoc](https://javadoc-emblem.rhcloud.com/doc/net.mintern/functions-ternary-core/badge.svg)](http://www.javadoc.io/doc/net.mintern/functions-ternary-core)
+
 - [Every Java `@FunctionalInterface` you want!](#every-java-functionalinterface-you-want)
 - [Checked interfaces](#checked-interfaces)
 - [Static methods](#static-methods)
